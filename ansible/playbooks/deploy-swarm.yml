@@ -1,0 +1,47 @@
+---
+- name: Initialize Docker Swarm on manager
+  hosts: swarm_manager
+  become: true
+  tasks:
+    - name: Check current swarm state
+      ansible.builtin.command: docker info --format "{{ '{{' }} .Swarm.LocalNodeState {{ '}}' }}"
+      register: swarm_state
+      changed_when: false
+
+    - name: Initialize swarm if inactive
+      ansible.builtin.command: docker swarm init --advertise-addr {{ ansible_host }}
+      when: swarm_state.stdout == "inactive"
+      register: swarm_init
+      changed_when: swarm_state.stdout == "inactive"
+
+    - name: Get worker join token
+      ansible.builtin.command: docker swarm join-token -q worker
+      register: worker_join_token
+      changed_when: false
+
+- name: Join workers to Docker Swarm
+  hosts: swarm_workers
+  become: true
+  tasks:
+    - name: Check current swarm state
+      ansible.builtin.command: docker info --format "{{ '{{' }} .Swarm.LocalNodeState {{ '}}' }}"
+      register: swarm_state
+      changed_when: false
+
+    - name: Join worker node to swarm
+      ansible.builtin.command: docker swarm join --token {{ hostvars[groups['swarm_manager'][0]].worker_join_token.stdout }} {{ hostvars[groups['swarm_manager'][0]].ansible_host }}:2377
+      when: swarm_state.stdout == "inactive"
+      changed_when: swarm_state.stdout == "inactive"
+
+- name: Deploy application stack from manager
+  hosts: swarm_manager
+  become: true
+  tasks:
+    - name: Deploy application stack
+      ansible.builtin.command: docker stack deploy --with-registry-auth -c {{ docker_stack_file }} {{ swarm_stack_name }}
+      environment:
+        DB_PASSWORD: "{{ db_password }}"
+        NOTIFICATION_IMAGE: "{{ notification_image }}"
+      args:
+        chdir: "{{ project_root }}"
+      changed_when: true

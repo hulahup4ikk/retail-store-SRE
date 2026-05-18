@@ -1,0 +1,10 @@
+---
+- name: Deploy monitoring stack on Docker host
+  hosts: monitoring_nodes
+  become: true
+  tasks:
+    - name: Start monitoring stack
+      ansible.builtin.command: docker compose -f {{ monitoring_compose_file }} up -d
+      args:
+        chdir: "{{ project_root }}"
+      changed_when: true

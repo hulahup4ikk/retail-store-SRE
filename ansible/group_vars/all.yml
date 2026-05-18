@@ -1,0 +1,8 @@
+project_root: /opt/retail-store-sre
+swarm_stack_name: retail-store
+docker_stack_file: "{{ project_root }}/deploy/docker-swarm/stack.yml"
+monitoring_compose_file: "{{ project_root }}/monitoring/docker-compose.yml"
+aws_region: us-east-1
+eks_cluster_name: retail-store
+db_password: "RetailSRE-2026-7fK9mQ2xL8pV4nR6"
+notification_image: "890105071843.dkr.ecr.us-east-1.amazonaws.com/retail-store-sample-notification:v1"

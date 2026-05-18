@@ -1,0 +1,14 @@
+{
+  "name": "retail-store-notification",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Notification service for the retail store SRE project",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "prom-client": "^15.1.3"
+  }
+}

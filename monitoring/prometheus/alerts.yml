@@ -1,0 +1,51 @@
+groups:
+  - name: service-availability
+    rules:
+      - alert: ServiceDown
+        expr: up{job=~"ui|catalog|cart|orders|checkout|notification"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service {{ $labels.job }} is down"
+          description: "Prometheus cannot scrape {{ $labels.job }} for more than 1 minute."
+
+  - name: service-performance
+    rules:
+      - alert: OrdersHighLatency
+        expr: (sum(rate(http_server_requests_seconds_sum{job="orders",uri="/orders"}[5m])) / clamp_min(sum(rate(http_server_requests_seconds_count{job="orders",uri="/orders"}[5m])), 0.001)) > 0.2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Orders service high latency"
+          description: "Orders average latency is above 200 ms for 5 minutes."
+
+      - alert: OrdersErrorRateHigh
+        expr: (sum(rate(http_server_requests_seconds_count{job="orders",uri="/orders",status=~"5.."}[5m])) / clamp_min(sum(rate(http_server_requests_seconds_count{job="orders",uri="/orders"}[5m])), 0.001)) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Orders service high error rate"
+          description: "Orders service error rate is above 1 percent for 5 minutes."
+
+  - name: infrastructure
+    rules:
+      - alert: HostHighCPU
+        expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Host CPU utilization is high"
+          description: "CPU usage on {{ $labels.instance }} is above 85 percent for 10 minutes."
+
+      - alert: HostHighMemory
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Host memory utilization is high"
+          description: "Memory usage on {{ $labels.instance }} is above 85 percent for 10 minutes."

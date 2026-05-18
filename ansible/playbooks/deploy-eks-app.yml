@@ -1,0 +1,17 @@
+---
+- name: Deploy retail store to EKS from control host
+  hosts: localhost
+  connection: local
+  become: false
+  tasks:
+    - name: Update kubeconfig for EKS cluster
+      ansible.builtin.command: aws eks --region {{ aws_region }} update-kubeconfig --name {{ eks_cluster_name }}
+      args:
+        chdir: "{{ playbook_dir }}/../.."
+      changed_when: true
+
+    - name: Deploy application charts with helmfile
+      ansible.builtin.command: helmfile apply
+      args:
+        chdir: "{{ playbook_dir }}/../../src/app"
+      changed_when: true
